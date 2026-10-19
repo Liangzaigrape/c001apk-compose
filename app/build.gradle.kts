@@ -15,6 +15,7 @@ plugins {
 val gitCommitCount = providers.exec {
     commandLine("git", "rev-list", "HEAD", "--count")
 }.standardOutput.asText.map { it.trim().toInt() }.get()
+val calculatedVersionCode = gitCommitCount - 247 + 268
 val gitCommitHash = providers.exec {
     commandLine("git", "rev-parse", "--verify", "--short", "HEAD")
 }.standardOutput.asText.map { it.trim() }.get()
@@ -28,7 +29,7 @@ android {
         applicationId = "com.example.c001apk.compose"
         minSdk = 24
         targetSdk = 35
-        versionCode = gitCommitCount
+        versionCode = calculatedVersionCode
         versionName = gitCommitHash
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
