@@ -47,7 +47,9 @@ public class DecodeHandler extends Handler {
     private static final String NAME = "DecodeHandler";
     private static final int WHAT_DECODE = 1001;
 
-    private boolean disableInBitmap;
+    // Region decodes can return partially corrupted tiles on some Android codec/device
+    // combinations when an inBitmap is supplied. Decode tiles into fresh bitmaps instead.
+    private boolean disableInBitmap = true;
 
     @NonNull
     private WeakReference<BlockExecutor> reference;
