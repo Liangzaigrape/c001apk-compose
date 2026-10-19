@@ -20,7 +20,9 @@ class MojitoOkHttpImageLoader(context: Context) : ImageLoader {
         .build()
 
     private val callMap = ConcurrentHashMap<Int, Call>()
-    private val cacheDir = File(context.cacheDir, "mojito").apply { mkdirs() }
+    // Start with a clean cache namespace because older builds could store truncated files
+    // when concurrent requests for one URL shared the same temporary file.
+    private val cacheDir = File(context.cacheDir, "mojito-v2").apply { mkdirs() }
 
     override fun loadImage(
         requestId: Int,
@@ -72,6 +74,7 @@ class MojitoOkHttpImageLoader(context: Context) : ImageLoader {
         val call = client.newCall(request)
         callMap[requestId] = call
         thread(name = "mojito-loader-$requestId") {
+            var tempFile: File? = null
             try {
                 call.execute().use { response ->
                     if (!response.isSuccessful) {
@@ -79,12 +82,12 @@ class MojitoOkHttpImageLoader(context: Context) : ImageLoader {
                     }
                     val body = response.body ?: throw IOException("empty body")
                     val total = body.contentLength().coerceAtLeast(0L)
-                    val tempFile = File(cacheDir, "${cacheFile.name}.tmp")
-                    if (tempFile.exists()) {
-                        tempFile.delete()
-                    }
+                    // A URL can be requested concurrently by adjacent Mojito pages. A shared
+                    // temp filename lets those downloads truncate or delete each other's data.
+                    val downloadTempFile = File.createTempFile("${cacheFile.name}.", ".tmp", cacheDir)
+                    tempFile = downloadTempFile
                     body.byteStream().use { input ->
-                        FileOutputStream(tempFile).use { output ->
+                        FileOutputStream(downloadTempFile).use { output ->
                             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
                             var read: Int
                             var current = 0L
@@ -99,8 +102,12 @@ class MojitoOkHttpImageLoader(context: Context) : ImageLoader {
                             output.flush()
                         }
                     }
-                    if (!tempFile.renameTo(cacheFile)) {
-                        throw IOException("cache rename failed")
+                    if (!downloadTempFile.renameTo(cacheFile)) {
+                        // Another complete request for this URL may have populated the cache
+                        // first. Its file is safe to use; otherwise report the actual failure.
+                        if (!cacheFile.exists() || cacheFile.length() <= 0L) {
+                            throw IOException("cache rename failed")
+                        }
                     }
                     callback.onSuccess(cacheFile)
                 }
@@ -111,6 +118,7 @@ class MojitoOkHttpImageLoader(context: Context) : ImageLoader {
                     callback.onFail(e)
                 }
             } finally {
+                tempFile?.delete()
                 callback.onFinish()
                 callMap.remove(requestId)
             }
