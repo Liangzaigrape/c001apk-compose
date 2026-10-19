@@ -65,6 +65,8 @@ class UserPreferencesRepository @Inject constructor(
 
     suspend fun setXAppDevice(value: String) = userPreferencesDataSource.setXAppDevice(value)
 
+    suspend fun setSzlmId(value: String) = userPreferencesDataSource.setSzlmId(value)
+
     suspend fun setXAppToken(value: String) = userPreferencesDataSource.setXAppToken(value)
 
     suspend fun setIsLogin(value: Boolean) = userPreferencesDataSource.setIsLogin(value)

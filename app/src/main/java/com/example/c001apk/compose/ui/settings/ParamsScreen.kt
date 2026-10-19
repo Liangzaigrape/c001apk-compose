@@ -22,8 +22,7 @@ import com.example.c001apk.compose.constant.Constants
 import com.example.c001apk.compose.logic.providable.LocalUserPreferences
 import com.example.c001apk.compose.ui.component.BackButton
 import com.example.c001apk.compose.ui.component.settings.BasicListItem
-import com.example.c001apk.compose.util.TokenDeviceUtils.encode
-import com.example.c001apk.compose.util.Utils.randomMacAddress
+import com.example.c001apk.compose.util.TokenDeviceUtils.buildDeviceCode
 
 /**
  * Created by bggRGjQaUbCoE on 2024/6/1
@@ -88,9 +87,7 @@ fun ParamsScreen(
                 data = prefs.manufacturer.ifEmpty { null }
             ) {
                 viewModel.setManufacturer(it)
-                viewModel.setXAppDevice(
-                    encode("${prefs.szlmId}; ; ; ${randomMacAddress()}; $it; ${prefs.brand}; ${prefs.model}; ${prefs.buildNumber}; null")
-                )
+                viewModel.setXAppDevice(buildDeviceCode(prefs.szlmId, it, prefs.brand, prefs.model, prefs.buildNumber))
             }
 
             ParamsItem(
@@ -98,9 +95,7 @@ fun ParamsScreen(
                 data = prefs.brand.ifEmpty { null }
             ) {
                 viewModel.setBrand(it)
-                viewModel.setXAppDevice(
-                    encode("${prefs.szlmId}; ; ; ${randomMacAddress()}; ${prefs.manufacturer}; $it; ${prefs.model}; ${prefs.buildNumber}; null")
-                )
+                viewModel.setXAppDevice(buildDeviceCode(prefs.szlmId, prefs.manufacturer, it, prefs.model, prefs.buildNumber))
                 viewModel.setUserAgent(
                     "Dalvik/2.1.0 (Linux; U; Android ${prefs.androidVersion}; ${prefs.model} ${prefs.buildNumber}) (#Build; $it; ${prefs.model}; ${prefs.buildNumber}; ${prefs.androidVersion}) +CoolMarket/${prefs.versionName}-${prefs.versionCode}-${Constants.MODE}"
                 )
@@ -111,9 +106,7 @@ fun ParamsScreen(
                 data = prefs.model.ifEmpty { null }
             ) {
                 viewModel.setModel(it)
-                viewModel.setXAppDevice(
-                    encode("${prefs.szlmId}; ; ; ${randomMacAddress()}; ${prefs.manufacturer}; ${prefs.brand}; $it; ${prefs.buildNumber}; null")
-                )
+                viewModel.setXAppDevice(buildDeviceCode(prefs.szlmId, prefs.manufacturer, prefs.brand, it, prefs.buildNumber))
                 viewModel.setUserAgent(
                     "Dalvik/2.1.0 (Linux; U; Android ${prefs.androidVersion}; $it ${prefs.buildNumber}) (#Build; ${prefs.brand}; $it; ${prefs.buildNumber}; ${prefs.androidVersion}) +CoolMarket/${prefs.versionName}-${prefs.versionCode}-${Constants.MODE}"
                 )
@@ -124,11 +117,9 @@ fun ParamsScreen(
                 data = prefs.buildNumber.ifEmpty { null }
             ) {
                 viewModel.setBuildNumber(it)
-                viewModel.setXAppDevice(
-                    encode("${prefs.szlmId}; ; ; ${randomMacAddress()}; ${prefs.manufacturer}; ${prefs.brand}; ${prefs.model}; $it; null")
-                )
+                viewModel.setXAppDevice(buildDeviceCode(prefs.szlmId, prefs.manufacturer, prefs.brand, prefs.model, it))
                 viewModel.setUserAgent(
-                    "Dalvik/2.1.0 (Linux; U; Android ${prefs.androidVersion}; ${prefs.model} ${prefs.buildNumber}) (#Build; ${prefs.brand}; ${prefs.model}; $it; ${prefs.androidVersion}) +CoolMarket/${prefs.versionName}-${prefs.versionCode}-${Constants.MODE}"
+                    "Dalvik/2.1.0 (Linux; U; Android ${prefs.androidVersion}; ${prefs.model} $it) (#Build; ${prefs.brand}; ${prefs.model}; $it; ${prefs.androidVersion}) +CoolMarket/${prefs.versionName}-${prefs.versionCode}-${Constants.MODE}"
                 )
             }
 

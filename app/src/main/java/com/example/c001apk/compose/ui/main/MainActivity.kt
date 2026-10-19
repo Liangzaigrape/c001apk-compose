@@ -24,6 +24,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.example.c001apk.compose.logic.providable.LocalUserPreferences
 import com.example.c001apk.compose.logic.repository.UserPreferencesRepository
+import com.example.c001apk.compose.constant.Constants
 import com.example.c001apk.compose.ui.theme.C001apkComposeTheme
 import com.example.c001apk.compose.ui.search.SearchViewModel
 import com.example.c001apk.compose.util.CookieUtil.apiVersion
@@ -55,6 +56,8 @@ import com.example.c001apk.compose.util.CookieUtil.username
 import com.example.c001apk.compose.util.CookieUtil.versionCode
 import com.example.c001apk.compose.util.CookieUtil.versionName
 import com.example.c001apk.compose.util.CookieUtil.xAppDevice
+import com.example.c001apk.compose.util.TokenDeviceUtils.buildDeviceCode
+import com.example.c001apk.compose.util.TokenDeviceUtils.randHexString
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
@@ -99,8 +102,13 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setupStableStatusBarInsets()
 
-        val initialPreferences = runBlocking {
+        var initialPreferences = runBlocking {
             userPreferencesRepository.data.first()
+        }
+        val savedCode = initialPreferences.versionCode.toLongOrNull() ?: 0L
+        if (initialPreferences.xAppDevice.isEmpty() || savedCode < Constants.VERSION_CODE.toLong()) {
+            runBlocking { migrateNetworkParams(initialPreferences.szlmId) }
+            initialPreferences = runBlocking { userPreferencesRepository.data.first() }
         }
 
         setContent {
@@ -123,9 +131,6 @@ class MainActivity : ComponentActivity() {
             CompositionLocalProvider(
                 LocalUserPreferences provides preferences
             ) {
-                if (preferences.xAppDevice.isEmpty())
-                    viewModel.regenerateParams()
-
                 isLogin = preferences.isLogin
                 szlmId = preferences.szlmId
                 xAppDevice = preferences.xAppDevice
@@ -189,6 +194,35 @@ class MainActivity : ComponentActivity() {
 
         }
 
+    }
+
+    private suspend fun migrateNetworkParams(existingSzlmId: String) {
+        val manufacturer = android.os.Build.MANUFACTURER.orEmpty().ifBlank { "OnePlus" }
+        val brand = android.os.Build.BRAND.orEmpty().ifBlank { manufacturer }
+        val model = android.os.Build.MODEL.orEmpty().ifBlank { "PJZ110" }
+        val buildNumber = android.os.Build.DISPLAY.orEmpty().ifBlank { "PJZ110_16.0.5.703(CN01)" }
+        val androidVersion = android.os.Build.VERSION.RELEASE.orEmpty().ifBlank { "16" }
+        val effectiveSzlmId = existingSzlmId.ifBlank { randHexString(16) }
+        val userAgent =
+            "Dalvik/2.1.0 (Linux; U; Android $androidVersion; $model $buildNumber) (#Build; $brand; $model; $buildNumber; $androidVersion) +CoolMarket/${Constants.VERSION_NAME}-${Constants.VERSION_CODE}-${Constants.MODE}"
+        val deviceCode = buildDeviceCode(
+            effectiveSzlmId, manufacturer, brand, model, buildNumber
+        )
+
+        userPreferencesRepository.apply {
+            if (existingSzlmId.isBlank()) setSzlmId(effectiveSzlmId)
+            setVersionName(Constants.VERSION_NAME)
+            setVersionCode(Constants.VERSION_CODE)
+            setApiVersion(Constants.API_VERSION)
+            setManufacturer(manufacturer)
+            setBrand(brand)
+            setModel(model)
+            setBuildNumber(buildNumber)
+            setSdkInt(android.os.Build.VERSION.SDK_INT.toString())
+            setAndroidVersion(androidVersion)
+            setUserAgent(userAgent)
+            setXAppDevice(deviceCode)
+        }
     }
 
     private fun setupStableStatusBarInsets() {

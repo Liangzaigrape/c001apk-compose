@@ -7,7 +7,7 @@ import com.example.c001apk.compose.constant.Constants.LOCALE
 import com.example.c001apk.compose.constant.Constants.MODE
 import com.example.c001apk.compose.constant.Constants.REQUEST_WITH
 import com.example.c001apk.compose.util.CookieUtil.SESSID
-import com.example.c001apk.compose.util.TokenDeviceUtils.getTokenV2
+import com.example.c001apk.compose.util.TokenDeviceUtils.getTokenV3
 import okhttp3.Interceptor
 import okhttp3.Request
 import okhttp3.Response
@@ -22,7 +22,8 @@ object AddCookiesInterceptor : Interceptor {
     override fun intercept(chain: Interceptor.Chain): Response {
         val builder: Request.Builder = chain.request().newBuilder()
         val deviceCode = CookieUtil.xAppDevice
-        val token = deviceCode.getTokenV2()
+        val versionCode = CookieUtil.versionCode
+        val token = deviceCode.getTokenV3(versionCode)
         builder.apply {
             addHeader("User-Agent", CookieUtil.userAgent)
             addHeader("X-Requested-With", REQUEST_WITH)
@@ -38,6 +39,10 @@ object AddCookiesInterceptor : Interceptor {
             addHeader("X-App-Channel", CHANNEL)
             addHeader("X-App-Mode", MODE)
             addHeader("X-App-Supported", CookieUtil.versionCode)
+            addHeader(
+                "Referer",
+                "https://api.coolapk.com/?ref=CoolMarket/${CookieUtil.versionName}-$versionCode-$MODE"
+            )
             addHeader("Content-Type", "application/x-www-form-urlencoded")
             if (CookieUtil.isLogin)
                 addHeader(

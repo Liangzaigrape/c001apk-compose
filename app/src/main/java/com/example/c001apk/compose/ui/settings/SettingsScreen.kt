@@ -97,8 +97,7 @@ import com.example.c001apk.compose.ui.component.settings.StateDropdownListItem
 import com.example.c001apk.compose.ui.component.settings.SwitchListItem
 import com.example.c001apk.compose.util.CacheDataManager.clearAllCache
 import com.example.c001apk.compose.util.CacheDataManager.getTotalCacheSize
-import com.example.c001apk.compose.util.TokenDeviceUtils.encode
-import com.example.c001apk.compose.util.Utils.randomMacAddress
+import com.example.c001apk.compose.util.TokenDeviceUtils.buildDeviceCode
 import com.example.c001apk.compose.util.openInBrowser
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.materialkolor.PaletteStyle
@@ -465,7 +464,7 @@ fun SettingsScreen(
                     setData = {
                         viewModel.setSZLMId(it)
                         viewModel.setXAppDevice(
-                            encode("$it; ; ; ${randomMacAddress()}; ${prefs.manufacturer}; ${prefs.brand}; ${prefs.model}; ${prefs.buildNumber}; null")
+                            buildDeviceCode(it, prefs.manufacturer, prefs.brand, prefs.model, prefs.buildNumber)
                         )
                     }
                 )

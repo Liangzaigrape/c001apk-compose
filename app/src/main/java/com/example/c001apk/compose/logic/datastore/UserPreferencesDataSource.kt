@@ -114,6 +114,10 @@ class UserPreferencesDataSource @Inject constructor(
         userPreferences.updateData { it.copy(xAppDevice = value) }
     }
 
+    suspend fun setSzlmId(value: String) = withContext(Dispatchers.IO) {
+        userPreferences.updateData { it.copy(szlmId = value) }
+    }
+
     suspend fun setXAppToken(value: String) = withContext(Dispatchers.IO) {
         userPreferences.updateData { it.copy(xAppToken = value) }
     }
