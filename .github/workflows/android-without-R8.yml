@@ -54,10 +54,8 @@ jobs:
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
       - name: Upload build artifact
-        env:
-          SIGNING_KEY: ${{ secrets.KEYSTORE_BASE64 }}
-        if: ${{ env.SIGNING_KEY != '' }}
         uses: actions/upload-artifact@v4
         with:
           name: c001apk-compose-release-no-r8
-          path: ${{ steps.sign_app.outputs.signedReleaseFile }}
+          path: app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
